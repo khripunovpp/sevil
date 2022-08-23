@@ -7,7 +7,7 @@ const uglify = require("gulp-uglify");
 const sass = require('gulp-sass')(require('sass'));
 const concat = require("gulp-concat");
 const browserSync = require("browser-sync").create(); //https://browsersync.io/docs/gulp#page-top
-const nunjucksRender = require("gulp-nunjucks-render");
+const pug = require("gulp-pug");
 const autoprefixer = require('gulp-autoprefixer');
 const babel = require('gulp-babel');
 
@@ -33,18 +33,6 @@ function copyHTML(cb) {
     cb();
 }
 
-// Minify HTML
-function minifyHTML(cb) {
-    gulp.src("src/*.html")
-        .pipe(gulp.dest("dist"))
-        .pipe(
-            htmlmin({
-                collapseWhitespace: true
-            })
-        )
-        .pipe(gulp.dest("dist"));
-    cb();
-}
 
 // Scripts
 function js(cb) {
@@ -72,29 +60,11 @@ function css(cb) {
     cb();
 }
 
-// Process Nunjucks
-function nunjucks(cb) {
-    gulp.src("src/pages/*.html")
+// Process templates
+function pugBuild(cb) {
+    gulp.src("src/pages/*.pug")
         .pipe(
-            nunjucksRender({
-                path: ["src/templates/"] // String or Array
-            })
-        )
-        .pipe(gulp.dest("dist"));
-    cb();
-}
-
-function nunjucksMinify(cb) {
-    gulp.src("src/pages/*.html")
-        .pipe(
-            nunjucksRender({
-                path: ["src/templates/"] // String or Array
-            })
-        )
-        .pipe(
-            htmlmin({
-                collapseWhitespace: true
-            })
+            pug()
         )
         .pipe(gulp.dest("dist"));
     cb();
@@ -109,15 +79,15 @@ function watch_files() {
     });
     gulp.watch("src/assets/sass/**/*.scss", css);
     gulp.watch("src/assets/js/*.js", js).on("change", browserSync.reload);
-    gulp.watch("src/pages/*.html", nunjucks).on("change", browserSync.reload);
-    gulp.watch("src/templates/*.html", nunjucks).on(
+    gulp.watch("src/pages/*.pug", pugBuild).on("change", browserSync.reload);
+    gulp.watch("src/templates/*.pug", pugBuild).on(
         "change",
         browserSync.reload
     );
 }
 
 // Default 'gulp' command with start local server and watch files for changes.
-exports.default = series(nunjucks, css, js, imageMin, watch_files);
+exports.default = series(pugBuild, css, js, imageMin, watch_files);
 
 // 'gulp build' will build all assets but not run on a local server.
-exports.build = parallel(nunjucksMinify, css, js, imageMin);
+exports.build = parallel(css, js, imageMin);
